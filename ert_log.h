@@ -1,7 +1,7 @@
 /* ERT_LOG.h Error, warning and debugging logs
  *
  * (c) 2018 Ellis Rhys Thomas <e.rhys.thomas@gmail.com>
- * Licenced GPLv3 or later
+ * Licence: Public Domain
  *
  * Contains macros from simple logging. Verbosity of logging is
  * dictated by the value of LOGLEVEL:
