@@ -43,12 +43,12 @@
  * This header provides the function-like macros listed above. The
  * macros write outputs (to stderr or stdout dependant on the
  * function) according to a format string that specifies how
- * subsequent arguements are converted for output (see man(3)
+ * subsequent arguments are converted for output (see man(3)
  * printf).
  *
- * The output is prefixed with a descriptive tag, followed by funtion,
+ * The output is prefixed with a descriptive tag, followed by function,
  * file and line number. When LOGLEVEL is greater than 1, logs have
- * appropriate ANSI color formatting. Error and warning macros print
+ * appropriate ANSI colour formatting. Error and warning macros print
  * and reset errno to zero.
  * 
  * log_err(const char *fmt, ...)
