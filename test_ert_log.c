@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include "ert_log.h"
 
+/* Ensure you set LOGLEVEL during compilation with -DLOGLEVEL = 3. */
+
 int main(int argc, char **argv)
 {
     // testing basic logging functionality
