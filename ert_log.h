@@ -112,13 +112,15 @@
    it. See man(3) errno . */
 static int __errno = 0;
 
-#if LOGLEVEL >= 1		/* Level 1 - Warnings */
-#define ERT_LOG(STREAM, TITLE, MSG, ...) do {		\
-	fprintf(STREAM, TITLE				\
-		" in " BOLD "%s" ANSI_RESET		\
-		" at " BOLD "%s:%d: " ANSI_RESET  MSG,	\
-		__func__, __FILE__, __LINE__,		\
-		##__VA_ARGS__); } while (0)
+#define ERT_LOG(STREAM, TITLE, MSG, ...) do {				\
+	_Pragma("GCC diagnostic push");					\
+	_Pragma("GCC diagnostic ignored \"-Wformat-zero-length\"");	\
+	fprintf(STREAM, TITLE				                \
+		" in " BOLD "%s" ANSI_RESET		                \
+		" at " BOLD "%s:%d: " ANSI_RESET  MSG,	                \
+		__func__, __FILE__, __LINE__,		                \
+		##__VA_ARGS__);						\
+	_Pragma("GCC diagnostic pop"); } while (0)			\
 
 #define STORE_ERRNO __errno = errno
 #define CLEAN_ERRNO errno = 0; __errno = 0
@@ -136,6 +138,7 @@ static int __errno = 0;
 		MSG, ##__VA_ARGS__);			\
 	ERRNO_MSG(); } while(0)
 
+#if LOGLEVEL >= 1		/* Level 1 - Warnings */
 #define log_warn(MSG, ...) do{				\
 	STORE_ERRNO;					\
 	ERT_LOG(stderr, YELLOW "[WARN]" ANSI_RESET,	\
