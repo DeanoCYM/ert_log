@@ -82,6 +82,10 @@
 #include <errno.h>
 #include <string.h>		/* for strerror() */
 
+#ifndef LOGLEVEL
+#define LOGLEVEL = 0
+#endif	/* LOGLEVEL */
+
 #if LOGLEVEL > 1
 #define RED        "\x1b[1;31m"
 #define YELLOW     "\x1b[1;33m"
