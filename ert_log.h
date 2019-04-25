@@ -1,19 +1,75 @@
-/* ERT_LOG.h Error, warning and debugging logs
+/* ERT_LOG.h Varadic logging macros
  *
  * (c) 2018 Ellis Rhys Thomas <e.rhys.thomas@gmail.com>
- * Licence: Public Domain
- *
- * Contains macros from simple logging. Verbosity of logging is
- * dictated by the value of LOGLEVEL:
  * 
- *     LOGLEVEL == 0, only error messages
- *     LOGLEVEL == 1, extra warning messages
- *     LOGLEVEL == 2, extra verbose information
- *     LOGLEVEL == 3, extra debugging information
+ * Permission is hereby granted, free of charge, to any person
+ * obtaining a copy of this software and associated documentation
+ * files (the "Software"), to deal in the Software without
+ * restriction, including without limitation the rights to use, copy,
+ * modify, merge, publish, distribute, sublicense, and/or sell copies
+ * of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
  *
- * When LOGLEVEL is greater than 0, logs have ANSI color formatting.
- * Error and warning macros reset errno
+ * The above copyright notice and this permission notice shall be
+ * included in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+ * BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+ * ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ *
+ * Contains varadic macros for variable levels of logging. Verbosity
+ * of logging is dictated by the value of LOGLEVEL.
+ *
+ *     #include <ert_log.h>
  * 
+ *     log_err(const char *fmt, ...);
+ *     log_warn(const char *fmt, ...);
+ *     log_info(const char *fmt, ...);
+ *     log_debug(const char *fmt, ...);
+ *
+ *     LOGLEVEL == 0, only error messages.
+ *     LOGLEVEL == 1, extra warning messages.
+ *     LOGLEVEL == 2, extra verbose information (all with colour).
+ *     LOGLEVEL == 3, extra debugging information (all with colour).
+ *
+ * This header provides the function-like macros listed above. The
+ * macros write outputs (to stderr or stdout dependant on the
+ * function) according to a format string that specifies how
+ * subsequent arguements are converted for output (see man(3)
+ * printf).
+ *
+ * The output is prefixed with a descriptive tag, followed by funtion,
+ * file and line number. When LOGLEVEL is greater than 1, logs have
+ * appropriate ANSI color formatting. Error and warning macros print
+ * and reset errno to zero.
+ * 
+ * log_err(const char *fmt, ...)
+ *
+ * Outputs to stderr prefixed with [ERROR] all all values of LOGLEVEL
+ * or if it is not defined. Font colour is red if LOGLEVEL <
+ * 1. Outputs errno when non zero, outputs "No errno" when zero.
+ *
+ * log_warn(const char *fmt, ...)
+ *
+ * Outputs to stderr prefixed with [WARN] if LOGLEVEL > 0. Font colour
+ * is orange if LOGLEVEL > 2. Outputs errno when non zero, outputs "No
+ * errno" when zero.
+ *
+ * log_info(const char *fmt, ...)
+ *
+ * Outputs to stdout prefixed with [INFO] if LOGLEVEL > 1. Font colour
+ * is green.
+ *
+ * log_info(const char *fmt, ...)
+ *
+ * Outputs to stdout prefixed with [DEBUG] if LOGLEVEL > 2. Font
+ * colour is blue.
+ *
  */
 
 #ifndef ERT_LOG_H
@@ -23,69 +79,79 @@
 #include <errno.h>
 #include <string.h>		/* for strerror() */
 
+#if LOGLEVEL > 1
 #define RED        "\x1b[1;31m"
 #define YELLOW     "\x1b[1;33m"
 #define GREEN      "\x1b[1;32m"
 #define CYAN       "\x1b[1;36m"
 #define BOLD       "\x1b[1m"
 #define ANSI_RESET "\x1b[0m"
+#endif	/* LOGLEVEL > 1 */
+
+#if LOGLEVEL < 2
+#define RED          ""
+#define YELLOW	     ""
+#define GREEN	     ""
+#define CYAN	     ""
+#define BOLD	     ""
+#define ANSI_RESET   ""
+#endif	/* LOGLEVEL < 2 */
 
 #ifndef LOGLEVEL
 #define LOGLEVEL 0
 #endif
 
-#if LOGLEVEL <= 0		/* Always present - Error messages */
-
-#define log_err(MSG, ...) {					\
-	fprintf(stderr, "[ERROR] " MSG, ##__VA_ARGS__);		\
-	fprintf(stderr, " (%s)\n",				\
-		errno == 0 ? "No errno" : strerror(errno));	\
-	errno = 0;						\
-    }								\
-	
-#endif	/* LOGLEVEL == 0 */
+/* Temporary storage for errno is required to avoid fprintf() altering
+   it. See man(3) errno . */
+static int __errno = 0;
 
 #if LOGLEVEL >= 1		/* Level 1 - Warnings */
-#define ERT_LOG(STREAM, TITLE, MSG, ...) {			\
-	fprintf(STREAM, TITLE					\
-		" in " BOLD "%s" ANSI_RESET			\
-		" at " BOLD "%s:%d: " ANSI_RESET  MSG,		\
-		__func__, __FILE__, __LINE__, ##__VA_ARGS__); }
+#define ERT_LOG(STREAM, TITLE, MSG, ...) do {		\
+	fprintf(STREAM, TITLE				\
+		" in " BOLD "%s" ANSI_RESET		\
+		" at " BOLD "%s:%d: " ANSI_RESET  MSG,	\
+		__func__, __FILE__, __LINE__,		\
+		##__VA_ARGS__); } while (0)
+
+#define STORE_ERRNO __errno = errno
+#define CLEAN_ERRNO errno = 0; __errno = 0
 
 #define ERRNO_MSG() {						\
 	fprintf(stderr, BOLD);					\
 	fprintf(stderr, " (%s)\n",				\
-		errno == 0 ? "No errno" : strerror(errno));	\
+		__errno == 0 ? "No errno" : strerror(__errno));	\
 	fprintf(stderr, ANSI_RESET);				\
-	errno = 0; }
+	CLEAN_ERRNO; }
 
-#define log_err(MSG, ...) {				\
+#define log_err(MSG, ...) do {				\
+	STORE_ERRNO;					\
 	ERT_LOG(stderr, RED "[ERROR]" ANSI_RESET,	\
 		MSG, ##__VA_ARGS__);			\
-	ERRNO_MSG(); }
+	ERRNO_MSG(); } while(0)
 
-#define log_warn(MSG, ...) {				\
+#define log_warn(MSG, ...) do{				\
+	STORE_ERRNO;					\
 	ERT_LOG(stderr, YELLOW "[WARN]" ANSI_RESET,	\
 		MSG, ##__VA_ARGS__);			\
-	ERRNO_MSG(); }
+	ERRNO_MSG(); } while(0)
 #else
-#define log_warn(MSG, ...) {}
+#define log_warn(MSG, ...) do { } while(0)
 #endif	/* LOGLEVEL >= 1 */
 
 #if LOGLEVEL >= 2		/* Level 2 - Information */
-#define log_info(MSG, ...) {				\
+#define log_info(MSG, ...) do {				\
 	ERT_LOG(stdout, GREEN "[INFO]" ANSI_RESET,	\
-		MSG "\n", ##__VA_ARGS__); }
+		MSG "\n", ##__VA_ARGS__); } while(0)
 #else
-#define log_info(MSG, ...) {}
+#define log_info(MSG, ...) do { } while(0)
 #endif	/* LOGLEVEL >= 2 */
 
 #if LOGLEVEL >= 3		/* Level 3 - Debugging information */
-#define log_debug(MSG, ...) {				\
+#define log_debug(MSG, ...) do {			\
 	ERT_LOG(stdout, CYAN "[DEBUG]" ANSI_RESET,	\
-		MSG "\n", ##__VA_ARGS__); }
+		MSG "\n", ##__VA_ARGS__); } while(0)
 #else
-#define log_debug(MSG, ...) {}
+#define log_debug(MSG, ...) do { } while (0)
 #endif	/* LOGLEVEL >= 3 */
 
 #endif	/* ERT_LOG_H */
