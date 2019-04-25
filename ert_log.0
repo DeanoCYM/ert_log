@@ -1,0 +1,94 @@
+.TH ERT_LOG 0
+.SH NAME
+ert_log.h - varadic logging macros
+.SH SYNOPSIS
+.sp
+.B #include <ert_log.h>
+.sp
+.BI "log_err(const char *" format ", ...);"
+.br
+.BI    "log_warn(const char *" format ", ...);"
+.br
+.BI    "log_info(const char *" format ", ...);"
+.br
+.BI    "log_debug(const char *" format ", ...);"
+.sp
+.SH DESCRIPTION
+Function-like macros with variable levels of
+verbosity, dictated by
+.I LOGLEVEL.
+The macros write outputs (to
+.IR stderr
+or
+.IR stdout
+dependant on the function) according to a
+.IR format
+that specifies how subsequent arguments are converted for output (see
+.BR printf (3)).
+
+The output is prefixed with a descriptive tag, followed by function name, file name and line number. When
+.IR LOGLEVEL
+is greater than 1, logs have appropriate ANSI colour formatting (see
+.BR terminal-colors.d (5)).
+.sp
+.TP
+.B LOGLEVEL == 0
+Only error messages are output.                          
+.TP
+.B LOGLEVEL == 1
+Error and warning messages are output.                       
+.TP
+.B LOGLEVEL == 2
+Error, warning and informational message are output with colour.  
+.TP
+.B LOGLEVEL == 3
+Error, warning, informational and debugging messages are output. All
+macros produce output with colour.
+.PP
+.BR log_err()
+Outputs to
+.IR stderr
+prefixed with [ERROR] for all values of
+.IR LOGLEVEL
+including if it is not defined. Font colour is red if
+.IR LOGLEVEL
+is greater than 1. Outputs
+.IR errno
+when non zero.
+.sp
+.BR log_warn()
+Outputs to
+.IR stderr
+prefixed with [WARN] if
+.IR LOGLEVEL
+is greater than 0. Font colour is orange if
+.IR LOGLEVEL
+is greater than 2. Outputs
+.IR errno
+when non zero.
+.sp
+.BR log_info()
+Outputs to
+.IR stdout
+prefixed with [INFO] if
+.IR LOGLEVEL
+is greater than 1. Font colour is green.
+.sp
+.BR log_debug()
+Outputs to
+.IR stdout
+prefixed with [DEBUG] if
+.IR LOGLEVEL
+is greater than 2. Font colour is blue.
+.SH AUTHOR
+Written by Ellis Rhys Thomas <e.rhys.thomas@gmail.com>
+.SH COPYRIGHT
+In jurisdictions that recognize copyright laws, the author of this
+software dedicates any and all copyright interest in the software to
+the public domain.
+.SH SEE ALSO
+.BR errno.h (0P)
+.BR printf (3)
+.BR terminal-colors.d (8)
+
+
