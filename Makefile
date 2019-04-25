@@ -17,3 +17,9 @@ install:
 	install -m 444 ert_log.h $(PREFIX)/include
 	install -d $(PREFIX)/man/man0
 	install -m 444 ert_log.h.0 $(PREFIX)/man/man0
+	install -d $(PREFIX)/man/man7
+	install -m 444 ert_log.h.0 $(PREFIX)/man/man7/ert_log.h.7
+	install -m 444 ert_log.h.0 $(PREFIX)/man/man7/log_err.7
+	install -m 444 ert_log.h.0 $(PREFIX)/man/man7/log_warn.7
+	install -m 444 ert_log.h.0 $(PREFIX)/man/man7/log_info.7
+	install -m 444 ert_log.h.0 $(PREFIX)/man/man7/log_debug.7
