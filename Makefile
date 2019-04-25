@@ -13,7 +13,7 @@ clean:
 	rm -f test_ert_log
 
 install:
-	-install -d $(PREFIX)/include
-	-install -d $(PREFIX)/include
-	-install -m 444 ert_log.h $(PREFIX)/man
-	-install -m 444 ert_log.h.0 $(PREFIX)/man
+	install -d $(PREFIX)/include
+	install -m 444 ert_log.h $(PREFIX)/include
+	install -d $(PREFIX)/man/man0
+	install -m 444 ert_log.h.0 $(PREFIX)/man/man0
