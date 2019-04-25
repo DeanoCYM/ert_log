@@ -5,7 +5,7 @@ CFLAGS=-Wall -g
 PREFIX?=/usr/local
 .PHONY: all clean install
 
-all: test_ert_log
+all: test_ert_log clean
 test_ert_log: test_ert_log.c ert_log.h
 	$(CC) $(CFLAGS) -DLOGLEVEL=$(LOGLEVEL) $< -o $@
 	./$@
