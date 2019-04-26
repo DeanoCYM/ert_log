@@ -1,12 +1,12 @@
 /* ERT_LOG.h Varadic logging macros
  *
  * This is free and unencumbered software released into the public domain.
- * 
+ *
  * Anyone is free to copy, modify, publish, use, compile, sell, or
  * distribute this software, either in source code form or as a
  * compiled binary, for any purpose, commercial or non-commercial, and
  * by any means.
- * 
+ *
  * In jurisdictions that recognize copyright laws, the author or authors
  * of this software dedicate any and all copyright interest in the
  * software to the public domain. We make this dedication for the benefit
@@ -14,7 +14,7 @@
  * successors. We intend this dedication to be an overt act of
  * relinquishment in perpetuity of all present and future rights to this
  * software under copyright law.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
  * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
@@ -22,14 +22,14 @@
  * OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
  * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  * OTHER DEALINGS IN THE SOFTWARE.
- * 
+ *
  * For more information, please refer to <http://unlicense.org/>
  *
  * Contains varadic macros for variable levels of logging. Verbosity
  * of logging is dictated by the value of LOGLEVEL.
  *
  *     #include <ert_log.h>
- * 
+ *
  *     log_err(const char *fmt, ...);
  *     log_warn(const char *fmt, ...);
  *     log_info(const char *fmt, ...);
@@ -50,7 +50,7 @@
  * file and line number. When LOGLEVEL is greater than 1, logs have
  * appropriate ANSI colour formatting. Error and warning macros print
  * and reset errno to zero.
- * 
+ *
  * log_err(const char *fmt, ...)
  *
  * Outputs to stderr prefixed with [ERROR] all all values of LOGLEVEL
@@ -86,7 +86,7 @@
 #define LOGLEVEL = 0
 #endif	/* LOGLEVEL */
 
-#if LOGLEVEL > 1
+#if LOGLEVEL > 1		/* Define ANSI terminal colours */
 #define RED        "\x1b[1;31m"
 #define YELLOW     "\x1b[1;33m"
 #define GREEN      "\x1b[1;32m"
@@ -95,7 +95,7 @@
 #define ANSI_RESET "\x1b[0m"
 #endif	/* LOGLEVEL > 1 */
 
-#if LOGLEVEL < 2
+#if LOGLEVEL < 2		/* Do not define colours */
 #define RED          ""
 #define YELLOW	     ""
 #define GREEN	     ""
@@ -104,6 +104,7 @@
 #define ANSI_RESET   ""
 #endif	/* LOGLEVEL < 2 */
 
+/* Defaults to LOGLEVEL 0 (plain text errors only) */
 #ifndef LOGLEVEL
 #define LOGLEVEL 0
 #endif
@@ -112,54 +113,81 @@
    it. See man(3) errno . */
 static int __errno = 0;
 
+/**
+    Macros used internally
+**/
+
 #define ERT_LOG(STREAM, TITLE, MSG, ...) do {				\
-	_Pragma("GCC diagnostic push");					\
-	_Pragma("GCC diagnostic ignored \"-Wformat-zero-length\"");	\
-	fprintf(STREAM, TITLE				                \
-		" in " BOLD "%s" ANSI_RESET		                \
-		" at " BOLD "%s:%d: " ANSI_RESET  MSG,	                \
-		__func__, __FILE__, __LINE__,		                \
+	fprintf(STREAM, TITLE						\
+		" in " BOLD "%s" ANSI_RESET				\
+		" at " BOLD "%s:%d: " ANSI_RESET  MSG,			\
+		__func__, __FILE__, __LINE__,				\
 		##__VA_ARGS__);						\
-	_Pragma("GCC diagnostic pop"); } while (0)			\
+    } while (0)
 
 #define STORE_ERRNO __errno = errno
 #define CLEAN_ERRNO errno = 0; __errno = 0
 
-#define ERRNO_MSG() {						\
+#define ERRNO_MSG() do {					\
 	fprintf(stderr, BOLD);					\
 	fprintf(stderr, " (%s)\n",				\
 		__errno == 0 ? "No errno" : strerror(__errno));	\
 	fprintf(stderr, ANSI_RESET);				\
-	CLEAN_ERRNO; }
+	CLEAN_ERRNO;						\
+    } while (0)						
 
-#define log_err(MSG, ...) do {				\
-	STORE_ERRNO;					\
-	ERT_LOG(stderr, RED "[ERROR]" ANSI_RESET,	\
-		MSG, ##__VA_ARGS__);			\
-	ERRNO_MSG(); } while(0)
+/**
+   Level 0 - Errors
+**/
 
-#if LOGLEVEL >= 1		/* Level 1 - Warnings */
-#define log_warn(MSG, ...) do{				\
-	STORE_ERRNO;					\
-	ERT_LOG(stderr, YELLOW "[WARN]" ANSI_RESET,	\
-		MSG, ##__VA_ARGS__);			\
-	ERRNO_MSG(); } while(0)
+#define log_err(MSG, ...) do {						\
+	_Pragma("GCC diagnostic ignored \"-Wformat-zero-length\"");	\
+	STORE_ERRNO;							\
+	ERT_LOG(stderr, RED "[ERROR]" ANSI_RESET,			\
+		MSG, ##__VA_ARGS__);					\
+	ERRNO_MSG();							\
+	_Pragma("GCC diagnostic error \"-Wformat-zero-length\"");	\
+    } while (0)
+
+/**
+   Level 1 - Warnings 
+**/
+
+#if LOGLEVEL >= 1		
+#define log_warn(MSG, ...) do{						\
+	_Pragma("GCC diagnostic ignored \"-Wformat-zero-length\"");	\
+	STORE_ERRNO;							\
+	ERT_LOG(stderr, YELLOW "[WARN]" ANSI_RESET,			\
+		MSG, ##__VA_ARGS__);					\
+	ERRNO_MSG();							\
+	_Pragma("GCC diagnostic error \"-Wformat-zero-length\"");	\
+    } while (0)
 #else
-#define log_warn(MSG, ...) do { } while(0)
+#define log_warn(MSG, ...) do { } while (0)
 #endif	/* LOGLEVEL >= 1 */
 
-#if LOGLEVEL >= 2		/* Level 2 - Information */
+/**
+   Level 2 - Information 
+**/
+
+#if LOGLEVEL >= 2		
 #define log_info(MSG, ...) do {				\
 	ERT_LOG(stdout, GREEN "[INFO]" ANSI_RESET,	\
-		MSG "\n", ##__VA_ARGS__); } while(0)
+		MSG "\n", ##__VA_ARGS__);		\
+    } while(0)
 #else
-#define log_info(MSG, ...) do { } while(0)
+#define log_info(MSG, ...) do { } while (0)
 #endif	/* LOGLEVEL >= 2 */
 
-#if LOGLEVEL >= 3		/* Level 3 - Debugging information */
+/**
+   Level 3 - Debugging logs
+**/
+
+#if LOGLEVEL >= 3
 #define log_debug(MSG, ...) do {			\
 	ERT_LOG(stdout, CYAN "[DEBUG]" ANSI_RESET,	\
-		MSG "\n", ##__VA_ARGS__); } while(0)
+		MSG "\n", ##__VA_ARGS__);		\
+    } while (0)
 #else
 #define log_debug(MSG, ...) do { } while (0)
 #endif	/* LOGLEVEL >= 3 */
